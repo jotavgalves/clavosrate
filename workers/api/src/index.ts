@@ -36,6 +36,13 @@ function adminDocumentRoute(pathname: string, suffix: 'content' | 'review'): str
   return match?.[1] || null;
 }
 
+function validQueueBatch(batch: MessageBatch<unknown>): boolean {
+  return batch.messages.every((message) => {
+    const body = message.body;
+    return typeof body === 'object' && body !== null && typeof (body as { type?: unknown }).type === 'string';
+  });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -43,21 +50,15 @@ export default {
     const origin = request.headers.get('origin');
     const corsOrigins = env.CORS_ALLOWED_ORIGINS || '';
 
-    if (request.method === 'OPTIONS') {
-      return withCors(new Response(null, { status: 204 }), origin, env.APP_ENV, corsOrigins);
-    }
+    if (request.method === 'OPTIONS') return withCors(new Response(null, { status: 204 }), origin, env.APP_ENV, corsOrigins);
 
     let response: Response;
-
     try {
       if (request.method === 'GET' && url.pathname === '/health') {
         response = json({ service: 'clavos-api', environment: env.APP_ENV, status: 'ok', timestamp: new Date().toISOString(), request_id: id }, id);
         return withCors(response, origin, env.APP_ENV, corsOrigins);
       }
-
-      if (request.method === 'GET' && url.pathname === '/api/v1') {
-        return withCors(routeCatalog(id), origin, env.APP_ENV, corsOrigins);
-      }
+      if (request.method === 'GET' && url.pathname === '/api/v1') return withCors(routeCatalog(id), origin, env.APP_ENV, corsOrigins);
 
       if (request.method === 'POST' && url.pathname === '/api/v1/auth/register-merchant') response = await registerMerchant(request, env, id);
       else if (request.method === 'POST' && url.pathname === '/api/v1/auth/login') response = await login(request, env, id);
@@ -90,11 +91,15 @@ export default {
       console.error('request_failed', { request_id: id, error });
       response = apiError(id, 500, 'INTERNAL_ERROR', 'No fue posible completar la solicitud.');
     }
-
     return withCors(response, origin, env.APP_ENV, corsOrigins);
   },
 
-  async queue(batch: MessageBatch, env: Env): Promise<void> {
-    await processQueue(batch, env);
+  async queue(batch: MessageBatch<unknown>, env: Env): Promise<void> {
+    if (!validQueueBatch(batch)) {
+      console.error('invalid_queue_batch');
+      for (const message of batch.messages) message.ack();
+      return;
+    }
+    await processQueue(batch as MessageBatch<any>, env);
   }
 } satisfies ExportedHandler<Env>;
