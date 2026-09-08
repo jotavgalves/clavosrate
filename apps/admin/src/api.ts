@@ -30,6 +30,7 @@ export const adminApi = {
   loans: () => request<any>('/api/v1/admin/loans'),
   documents: () => request<any>('/api/v1/admin/documents'),
   disputes: () => request<any>('/api/v1/admin/disputes'),
+  riskCases: (status = '') => request<any>(`/api/v1/admin/risk-cases${status ? `?status=${encodeURIComponent(status)}` : ''}`),
   audit: () => request<any>('/api/v1/admin/audit'),
   reviewDocument: (id: string, body: Record<string, unknown>) => request<any>(`/api/v1/admin/documents/${encodeURIComponent(id)}/review`, { method: 'POST', body: JSON.stringify(body) }),
   documentContentUrl: (id: string) => `${API_BASE}/api/v1/admin/documents/${encodeURIComponent(id)}/content`
