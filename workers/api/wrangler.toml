@@ -4,6 +4,7 @@ compatibility_date = "2026-09-01"
 
 [vars]
 APP_ENV = "development"
+CORS_ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:5174"
 
 [[d1_databases]]
 binding = "DB"
