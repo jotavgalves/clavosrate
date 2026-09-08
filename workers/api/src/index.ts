@@ -10,9 +10,11 @@ import {
   adminDocuments,
   adminLoans,
   adminOrganizations,
-  adminUsers
+  adminUsers,
+  adminRiskCases
 } from './handlers-admin';
 import { getAdminDocumentContent, reviewDocument, uploadDocument } from './handlers-documents';
+import { processQueue } from './queue';
 
 export interface Env {
   DB: D1Database;
@@ -95,6 +97,8 @@ export default {
         response = await adminDocuments(request, env, id);
       } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/disputes') {
         response = await adminDisputes(request, env, id);
+      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/risk-cases') {
+        response = await adminRiskCases(request, env, id);
       } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/audit') {
         response = await adminAudit(request, env, id);
       } else {
@@ -118,5 +122,9 @@ export default {
     }
 
     return withCors(response, origin, env.APP_ENV, corsOrigins);
+  },
+
+  async queue(batch: MessageBatch, env: Env): Promise<void> {
+    await processQueue(batch, env);
   }
 } satisfies ExportedHandler<Env>;
