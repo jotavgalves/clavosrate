@@ -16,10 +16,12 @@ export function apiError(requestIdValue: string, status: number, code: string, e
   return json({ error, code, request_id: requestIdValue } satisfies ApiError, requestIdValue, { status });
 }
 
-export function withCors(response: Response, origin: string | null, env: string): Response {
+export function withCors(response: Response, origin: string | null, env: string, allowedOrigins = ''): Response {
   const headers = new Headers(response.headers);
-  if (env !== 'production' && origin) {
-    headers.set('access-control-allow-origin', origin);
+  const configured = new Set(allowedOrigins.split(',').map((v) => v.trim()).filter(Boolean));
+  const allowOrigin = !!origin && (env !== 'production' || configured.has(origin));
+  if (allowOrigin) {
+    headers.set('access-control-allow-origin', origin!);
     headers.set('access-control-allow-credentials', 'true');
     headers.set('vary', 'Origin');
   }
