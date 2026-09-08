@@ -125,12 +125,15 @@ export async function adminDocuments(request: Request, env: EnvLike, requestId: 
   const limit = limitFrom(new URL(request.url));
 
   const result = await env.DB.prepare(
-    `SELECT d.id, d.person_id, p.full_name AS person_name, d.document_type,
-            d.review_status, d.uploaded_by_user_id, d.reviewed_by_user_id,
-            d.created_at, d.reviewed_at
+    `SELECT d.id, d.person_id, p.full_name AS person_name, p.birth_date, p.identity_status,
+            d.organization_id, o.trade_name AS organization_name, d.loan_id,
+            d.document_type, d.document_role, d.review_status, d.review_reason,
+            d.original_filename, d.mime_type, d.size_bytes, d.sha256,
+            d.uploaded_by_user_id, d.reviewed_by_user_id, d.created_at, d.reviewed_at
        FROM person_documents d
        JOIN persons p ON p.id = d.person_id
-      ORDER BY CASE d.review_status WHEN 'PENDING' THEN 0 ELSE 1 END, d.created_at ASC
+       LEFT JOIN organizations o ON o.id = d.organization_id
+      ORDER BY CASE d.review_status WHEN 'PENDING' THEN 0 WHEN 'NEEDS_CORRECTION' THEN 1 ELSE 2 END, d.created_at ASC
       LIMIT ?`
   ).bind(limit).all();
 
