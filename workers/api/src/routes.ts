@@ -1,16 +1,26 @@
-import { apiError, json } from './http';
+import { json } from './http';
 
 export const ROUTES = {
+  public: [
+    'GET /health',
+    'GET /api/v1',
+    'POST /api/v1/auth/register-merchant',
+    'POST /api/v1/auth/login'
+  ],
+  authenticated: [
+    'GET /api/v1/auth/me',
+    'POST /api/v1/auth/logout'
+  ],
   merchant: [
     'GET /api/v1/merchant/dashboard',
-    'GET /api/v1/persons/search',
+    'POST /api/v1/persons/search',
     'POST /api/v1/persons',
     'GET /api/v1/loans',
     'POST /api/v1/loans',
-    'POST /api/v1/loans/:id/payments',
-    'POST /api/v1/documents/upload-session'
+    'POST /api/v1/loans/:id/payments'
   ],
-  admin: [
+  pending: [
+    'POST /api/v1/documents/upload-session',
     'GET /api/v1/admin/dashboard',
     'GET /api/v1/admin/organizations',
     'GET /api/v1/admin/users',
@@ -27,12 +37,8 @@ export function routeCatalog(requestId: string): Response {
   return json({
     name: 'Clavos Brasil API',
     version: 'v1',
-    status: 'foundation',
+    status: 'auth-and-merchant-foundation',
     routes: ROUTES,
-    note: 'Las rutas protegidas se habilitarán únicamente después de implementar autenticación, sesión y autorización RBAC en el Worker.'
+    note: 'Las rutas merchant activas exigen sesión y RBAC. Las rutas administrativas siguen bloqueadas hasta completar handlers específicos.'
   }, requestId);
-}
-
-export function protectedStub(requestId: string): Response {
-  return apiError(requestId, 501, 'AUTH_REQUIRED_NOT_IMPLEMENTED', 'La ruta está reservada, pero permanece bloqueada hasta completar autenticación y autorización.');
 }
