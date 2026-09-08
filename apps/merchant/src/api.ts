@@ -24,7 +24,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  login: (email: string, password: string) => request<any>('/api/v1/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  login: (document_type: string, document_number: string, access_code: string) => request<any>('/api/v1/auth/login', { method: 'POST', body: JSON.stringify({ document_type, document_number, access_code }) }),
   register: (body: Record<string, unknown>) => request<any>('/api/v1/auth/register-merchant', { method: 'POST', body: JSON.stringify(body) }),
   me: () => request<any>('/api/v1/auth/me'),
   logout: () => request<any>('/api/v1/auth/logout', { method: 'POST' }),
