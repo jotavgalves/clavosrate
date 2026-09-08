@@ -17,7 +17,8 @@ export const ROUTES = {
     'POST /api/v1/persons',
     'GET /api/v1/loans',
     'POST /api/v1/loans',
-    'POST /api/v1/loans/:id/payments'
+    'POST /api/v1/loans/:id/payments',
+    'POST /api/v1/documents'
   ],
   admin: [
     'GET /api/v1/admin/dashboard',
@@ -25,12 +26,12 @@ export const ROUTES = {
     'GET /api/v1/admin/users',
     'GET /api/v1/admin/loans',
     'GET /api/v1/admin/documents',
+    'GET /api/v1/admin/documents/:id/content',
+    'POST /api/v1/admin/documents/:id/review',
     'GET /api/v1/admin/disputes',
     'GET /api/v1/admin/audit'
   ],
   pending: [
-    'POST /api/v1/documents/upload-session',
-    'POST /api/v1/admin/documents/:id/review',
     'GET /api/v1/admin/risk-cases'
   ]
 } as const;
@@ -39,8 +40,8 @@ export function routeCatalog(requestId: string): Response {
   return json({
     name: 'Clavos Brasil API',
     version: 'v1',
-    status: 'authenticated-domain-foundation',
+    status: 'authenticated-domain-and-document-foundation',
     routes: ROUTES,
-    note: 'Las rutas merchant y admin activas exigen sesión válida y permisos RBAC. Los documentos sensibles y acciones administrativas de escritura continúan cerrados.'
+    note: 'Las rutas activas exigen sesión y RBAC. Los documentos se almacenan en R2 privado y toda visualización o revisión administrativa queda auditada.'
   }, requestId);
 }
