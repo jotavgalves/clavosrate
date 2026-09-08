@@ -19,5 +19,11 @@ bucket_name = "clavos-documents-dev"
 binding = "JOBS"
 queue = "clavos-jobs-dev"
 
+[[queues.consumers]]
+queue = "clavos-jobs-dev"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 3
+
 [observability]
 enabled = true
