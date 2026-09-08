@@ -1,4 +1,4 @@
-import { hasPermission, type Permission } from '@clavos/permissions';
+import { hasPermission, type Permission } from '../../../packages/permissions/src/index';
 import { apiError } from './http';
 import { getSessionPrincipal, type SessionPrincipal } from './auth';
 
