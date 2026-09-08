@@ -13,12 +13,6 @@ type QueueEvent = {
   decision?: string;
 };
 
-function daysBetween(a: string, b: string): number {
-  const left = new Date(`${a.slice(0, 10)}T00:00:00Z`).getTime();
-  const right = new Date(`${b.slice(0, 10)}T00:00:00Z`).getTime();
-  return Math.max(0, Math.floor((right - left) / 86_400_000));
-}
-
 async function recalculateLoan(db: D1Database, loanId: string): Promise<string | null> {
   const loan = await db.prepare('SELECT id, person_id, verification_status FROM loans WHERE id = ? LIMIT 1')
     .bind(loanId)
@@ -73,14 +67,18 @@ async function recalculateLoan(db: D1Database, loanId: string): Promise<string |
     const allocated = installment.expected_minor - left;
     const related = allocationRows.filter((row) => row.installmentId === installment.id);
     let status = 'FUTURE';
+
     if (left <= 0) {
       paidCount++;
       const finalPaidAt = related.reduce((latest, row) => row.paidAt > latest ? row.paidAt : latest, '');
       status = finalPaidAt.slice(0, 10) <= installment.due_date ? 'PAID_ON_TIME' : 'PAID_LATE';
     } else if (allocated > 0) {
       status = installment.due_date < today ? 'PARTIAL_OVERDUE' : 'PARTIAL';
-    } else if (installment.due_date < today) status = 'OVERDUE';
-    else if (installment.due_date === today) status = 'DUE';
+    } else if (installment.due_date < today) {
+      status = 'OVERDUE';
+    } else if (installment.due_date === today) {
+      status = 'DUE';
+    }
 
     statements.push(db.prepare('UPDATE installments SET status = ? WHERE id = ?').bind(status, installment.id));
   }
@@ -88,6 +86,7 @@ async function recalculateLoan(db: D1Database, loanId: string): Promise<string |
   const loanStatus = installments.length > 0 && paidCount === installments.length
     ? 'COMPLETED'
     : (loan.verification_status === 'VERIFIED' ? 'ACTIVE' : 'PENDING_REVIEW');
+
   statements.push(db.prepare('UPDATE loans SET status = ?, updated_at = ? WHERE id = ?').bind(loanStatus, now, loanId));
   await db.batch(statements);
   return loan.person_id;
@@ -132,7 +131,14 @@ async function recalculateScore(db: D1Database, personId: string): Promise<void>
   const rating = score >= 700 ? 'LIMPIO' : score >= 500 ? 'ATENCION' : 'CLAVO';
   const confidence = total >= 30 ? 'HIGH' : total >= 10 ? 'MEDIUM' : 'LOW';
   const now = new Date().toISOString();
-  const factors = { total_installments: total, paid_on_time: onTime, paid_late: late, overdue, completed_loans: finishedLoans, punctuality };
+  const factors = {
+    total_installments: total,
+    paid_on_time: onTime,
+    paid_late: late,
+    overdue,
+    completed_loans: finishedLoans,
+    punctuality
+  };
 
   await db.batch([
     db.prepare(
@@ -171,10 +177,15 @@ async function detectDuplicateDocument(db: D1Database, documentId: string): Prom
       (id, case_type, severity, status, organization_id, person_id, loan_id, document_id, title, details_json, created_at, updated_at)
      VALUES (?, 'DUPLICATE_DOCUMENT', 'HIGH', 'OPEN', ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
-    crypto.randomUUID(), doc.organization_id, doc.person_id, doc.loan_id, doc.id,
+    crypto.randomUUID(),
+    doc.organization_id,
+    doc.person_id,
+    doc.loan_id,
+    doc.id,
     'Documento reutilizado en perfiles diferentes',
     JSON.stringify({ sha256: doc.sha256, distinct_people: duplicate?.people || 0, documents: duplicate?.documents || 0 }),
-    now, now
+    now,
+    now
   ).run();
 }
 
@@ -198,7 +209,7 @@ async function processEvent(db: D1Database, event: QueueEvent): Promise<void> {
 export async function processQueue(batch: MessageBatch<QueueEvent>, env: QueueEnv): Promise<void> {
   for (const message of batch.messages) {
     try {
-      await processEvent(env.DB, message.body);
+      await processEvent(env.DB, { ...message.body, event_id: message.id });
       message.ack();
     } catch (error) {
       console.error('queue_event_failed', { message_id: message.id, body: message.body, error });
