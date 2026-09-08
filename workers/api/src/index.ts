@@ -10,9 +10,9 @@ import {
   adminDocuments,
   adminLoans,
   adminOrganizations,
-  adminUsers,
-  adminRiskCases
+  adminUsers
 } from './handlers-admin';
+import { adminRiskCases } from './handlers-risk';
 import { getAdminDocumentContent, reviewDocument, uploadDocument } from './handlers-documents';
 import { processQueue } from './queue';
 
@@ -51,13 +51,7 @@ export default {
 
     try {
       if (request.method === 'GET' && url.pathname === '/health') {
-        response = json({
-          service: 'clavos-api',
-          environment: env.APP_ENV,
-          status: 'ok',
-          timestamp: new Date().toISOString(),
-          request_id: id
-        }, id);
+        response = json({ service: 'clavos-api', environment: env.APP_ENV, status: 'ok', timestamp: new Date().toISOString(), request_id: id }, id);
         return withCors(response, origin, env.APP_ENV, corsOrigins);
       }
 
@@ -65,56 +59,32 @@ export default {
         return withCors(routeCatalog(id), origin, env.APP_ENV, corsOrigins);
       }
 
-      if (request.method === 'POST' && url.pathname === '/api/v1/auth/register-merchant') {
-        response = await registerMerchant(request, env, id);
-      } else if (request.method === 'POST' && url.pathname === '/api/v1/auth/login') {
-        response = await login(request, env, id);
-      } else if (request.method === 'POST' && url.pathname === '/api/v1/auth/logout') {
-        response = await logout(request, env, id);
-      } else if (request.method === 'GET' && url.pathname === '/api/v1/auth/me') {
-        response = await me(request, env, id);
-      } else if (request.method === 'GET' && url.pathname === '/api/v1/merchant/dashboard') {
-        response = await merchantDashboard(request, env, id);
-      } else if (request.method === 'POST' && url.pathname === '/api/v1/persons/search') {
-        response = await searchPerson(request, env, id);
-      } else if (request.method === 'POST' && url.pathname === '/api/v1/persons') {
-        response = await createPerson(request, env, id);
-      } else if (request.method === 'GET' && url.pathname === '/api/v1/loans') {
-        response = await listLoans(request, env, id);
-      } else if (request.method === 'POST' && url.pathname === '/api/v1/loans') {
-        response = await createLoan(request, env, id);
-      } else if (request.method === 'POST' && url.pathname === '/api/v1/documents') {
-        response = await uploadDocument(request, env, id);
-      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/dashboard') {
-        response = await adminDashboard(request, env, id);
-      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/organizations') {
-        response = await adminOrganizations(request, env, id);
-      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/users') {
-        response = await adminUsers(request, env, id);
-      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/loans') {
-        response = await adminLoans(request, env, id);
-      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/documents') {
-        response = await adminDocuments(request, env, id);
-      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/disputes') {
-        response = await adminDisputes(request, env, id);
-      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/risk-cases') {
-        response = await adminRiskCases(request, env, id);
-      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/audit') {
-        response = await adminAudit(request, env, id);
-      } else {
+      if (request.method === 'POST' && url.pathname === '/api/v1/auth/register-merchant') response = await registerMerchant(request, env, id);
+      else if (request.method === 'POST' && url.pathname === '/api/v1/auth/login') response = await login(request, env, id);
+      else if (request.method === 'POST' && url.pathname === '/api/v1/auth/logout') response = await logout(request, env, id);
+      else if (request.method === 'GET' && url.pathname === '/api/v1/auth/me') response = await me(request, env, id);
+      else if (request.method === 'GET' && url.pathname === '/api/v1/merchant/dashboard') response = await merchantDashboard(request, env, id);
+      else if (request.method === 'POST' && url.pathname === '/api/v1/persons/search') response = await searchPerson(request, env, id);
+      else if (request.method === 'POST' && url.pathname === '/api/v1/persons') response = await createPerson(request, env, id);
+      else if (request.method === 'GET' && url.pathname === '/api/v1/loans') response = await listLoans(request, env, id);
+      else if (request.method === 'POST' && url.pathname === '/api/v1/loans') response = await createLoan(request, env, id);
+      else if (request.method === 'POST' && url.pathname === '/api/v1/documents') response = await uploadDocument(request, env, id);
+      else if (request.method === 'GET' && url.pathname === '/api/v1/admin/dashboard') response = await adminDashboard(request, env, id);
+      else if (request.method === 'GET' && url.pathname === '/api/v1/admin/organizations') response = await adminOrganizations(request, env, id);
+      else if (request.method === 'GET' && url.pathname === '/api/v1/admin/users') response = await adminUsers(request, env, id);
+      else if (request.method === 'GET' && url.pathname === '/api/v1/admin/loans') response = await adminLoans(request, env, id);
+      else if (request.method === 'GET' && url.pathname === '/api/v1/admin/documents') response = await adminDocuments(request, env, id);
+      else if (request.method === 'GET' && url.pathname === '/api/v1/admin/disputes') response = await adminDisputes(request, env, id);
+      else if (request.method === 'GET' && url.pathname === '/api/v1/admin/risk-cases') response = await adminRiskCases(request, env, id);
+      else if (request.method === 'GET' && url.pathname === '/api/v1/admin/audit') response = await adminAudit(request, env, id);
+      else {
         const loanId = request.method === 'POST' ? paymentRoute(url.pathname) : null;
         const documentContentId = request.method === 'GET' ? adminDocumentRoute(url.pathname, 'content') : null;
         const documentReviewId = request.method === 'POST' ? adminDocumentRoute(url.pathname, 'review') : null;
-
-        if (loanId) {
-          response = await createPayment(request, env, id, loanId);
-        } else if (documentContentId) {
-          response = await getAdminDocumentContent(request, env, id, documentContentId);
-        } else if (documentReviewId) {
-          response = await reviewDocument(request, env, id, documentReviewId);
-        } else {
-          response = apiError(id, 404, 'NOT_FOUND', 'Ruta no encontrada');
-        }
+        if (loanId) response = await createPayment(request, env, id, loanId);
+        else if (documentContentId) response = await getAdminDocumentContent(request, env, id, documentContentId);
+        else if (documentReviewId) response = await reviewDocument(request, env, id, documentReviewId);
+        else response = apiError(id, 404, 'NOT_FOUND', 'Ruta no encontrada');
       }
     } catch (error) {
       console.error('request_failed', { request_id: id, error });
