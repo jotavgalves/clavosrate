@@ -12,9 +12,41 @@ Atualize somente o `database_id` de desenvolvimento no `workers/api/wrangler.tom
 
 O `wrangler.toml` aponta `migrations_dir` para `../../migrations`, portanto as migrations permanecem centralizadas na raiz do monorepo.
 
+## Configuração do build conectado ao GitHub
+
+Este repositório é um monorepo. Não use `npx wrangler deploy` na raiz sem indicar qual projeto deve ser implantado.
+
+Para o Worker/API, há duas configurações válidas:
+
+### Opção recomendada — raiz do repositório
+
+- Root directory: `/`
+- Deploy command: `npm run deploy:api`
+
+O script executa:
+
+```bash
+npx wrangler deploy --config workers/api/wrangler.toml
+```
+
+### Alternativa — diretório do Worker
+
+- Root directory: `workers/api`
+- Deploy command: `npx wrangler deploy`
+
+Não configure o mesmo projeto Cloudflare para publicar também `apps/admin` e `apps/merchant`. Esses dois frontends devem ser projetos separados, cada um com seu próprio diretório e comando de build.
+
+O erro:
+
+```text
+The Cloudflare application detection logic has been run in the root of a workspace instead of targeting a specific project.
+```
+
+significa exatamente que o Wrangler foi executado na raiz do monorepo sem `--config workers/api/wrangler.toml` ou sem mudar o diretório de trabalho para `workers/api`.
+
 ## Aplicar migrations
 
-Após criar o D1, execute a partir de `workers/api` ou informe explicitamente o config:
+Após criar o D1, execute a partir da raiz informando explicitamente o config:
 
 ```bash
 npx wrangler d1 migrations apply clavos-dev --local --config workers/api/wrangler.toml
