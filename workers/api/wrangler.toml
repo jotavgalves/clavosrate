@@ -9,7 +9,7 @@ CORS_ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:5174"
 [[d1_databases]]
 binding = "DB"
 database_name = "clavos-dev"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "65644bd9-bb22-40f4-b4fc-8160502fbdae"
 migrations_dir = "../../migrations"
 
 [[r2_buckets]]
