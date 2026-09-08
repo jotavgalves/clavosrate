@@ -3,6 +3,15 @@ import { routeCatalog } from './routes';
 import { login, logout, me, registerMerchant } from './handlers-auth';
 import { createLoan, createPayment, listLoans, merchantDashboard } from './handlers-merchant';
 import { createPerson, searchPerson } from './handlers-persons';
+import {
+  adminAudit,
+  adminDashboard,
+  adminDisputes,
+  adminDocuments,
+  adminLoans,
+  adminOrganizations,
+  adminUsers
+} from './handlers-admin';
 
 export interface Env {
   DB: D1Database;
@@ -16,10 +25,6 @@ export interface Env {
 function paymentRoute(pathname: string): string | null {
   const match = pathname.match(/^\/api\/v1\/loans\/([^/]+)\/payments$/);
   return match?.[1] || null;
-}
-
-function isAdminPath(pathname: string): boolean {
-  return pathname.startsWith('/api/v1/admin/');
 }
 
 export default {
@@ -68,12 +73,24 @@ export default {
         response = await listLoans(request, env, id);
       } else if (request.method === 'POST' && url.pathname === '/api/v1/loans') {
         response = await createLoan(request, env, id);
+      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/dashboard') {
+        response = await adminDashboard(request, env, id);
+      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/organizations') {
+        response = await adminOrganizations(request, env, id);
+      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/users') {
+        response = await adminUsers(request, env, id);
+      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/loans') {
+        response = await adminLoans(request, env, id);
+      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/documents') {
+        response = await adminDocuments(request, env, id);
+      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/disputes') {
+        response = await adminDisputes(request, env, id);
+      } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/audit') {
+        response = await adminAudit(request, env, id);
       } else {
         const loanId = request.method === 'POST' ? paymentRoute(url.pathname) : null;
         if (loanId) {
           response = await createPayment(request, env, id, loanId);
-        } else if (isAdminPath(url.pathname)) {
-          response = apiError(id, 501, 'ADMIN_API_PENDING', 'La API administrativa continúa bloqueada hasta completar sus handlers con RBAC y auditoría.');
         } else {
           response = apiError(id, 404, 'NOT_FOUND', 'Ruta no encontrada');
         }
