@@ -1,0 +1,22 @@
+name = "clavos-api"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+
+[vars]
+APP_ENV = "development"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "clavos-dev"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[[r2_buckets]]
+binding = "PRIVATE_DOCUMENTS"
+bucket_name = "clavos-documents-dev"
+
+[[queues.producers]]
+binding = "JOBS"
+queue = "clavos-jobs-dev"
+
+[observability]
+enabled = true
