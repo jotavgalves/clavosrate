@@ -19,6 +19,7 @@ export interface Env {
   PRIVATE_DOCUMENTS: R2Bucket;
   JOBS: Queue;
   APP_ENV: string;
+  CORS_ALLOWED_ORIGINS?: string;
   CPF_HMAC_SECRET: string;
   CPF_ENCRYPTION_KEY_B64: string;
 }
@@ -38,9 +39,10 @@ export default {
     const url = new URL(request.url);
     const id = requestId(request);
     const origin = request.headers.get('origin');
+    const corsOrigins = env.CORS_ALLOWED_ORIGINS || '';
 
     if (request.method === 'OPTIONS') {
-      return withCors(new Response(null, { status: 204 }), origin, env.APP_ENV);
+      return withCors(new Response(null, { status: 204 }), origin, env.APP_ENV, corsOrigins);
     }
 
     let response: Response;
@@ -54,11 +56,11 @@ export default {
           timestamp: new Date().toISOString(),
           request_id: id
         }, id);
-        return withCors(response, origin, env.APP_ENV);
+        return withCors(response, origin, env.APP_ENV, corsOrigins);
       }
 
       if (request.method === 'GET' && url.pathname === '/api/v1') {
-        return withCors(routeCatalog(id), origin, env.APP_ENV);
+        return withCors(routeCatalog(id), origin, env.APP_ENV, corsOrigins);
       }
 
       if (request.method === 'POST' && url.pathname === '/api/v1/auth/register-merchant') {
@@ -115,6 +117,6 @@ export default {
       response = apiError(id, 500, 'INTERNAL_ERROR', 'No fue posible completar la solicitud.');
     }
 
-    return withCors(response, origin, env.APP_ENV);
+    return withCors(response, origin, env.APP_ENV, corsOrigins);
   }
 } satisfies ExportedHandler<Env>;
