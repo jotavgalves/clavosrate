@@ -19,6 +19,10 @@ export function normalizeCpf(value: string): string {
   return value.replace(/\D/g, '');
 }
 
+export function normalizeIdentityDocument(value: string): string {
+  return value.normalize('NFKC').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
 export function isValidCpf(value: string): boolean {
   const cpf = normalizeCpf(value);
   if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
@@ -31,10 +35,20 @@ export function isValidCpf(value: string): boolean {
   return digit(9) === Number(cpf[9]) && digit(10) === Number(cpf[10]);
 }
 
-export async function cpfLookupHmac(cpf: string, secret: string): Promise<string> {
+async function lookupHmac(value: string, secret: string): Promise<string> {
   const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(normalizeCpf(cpf)));
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(value));
   return b64url(new Uint8Array(signature));
+}
+
+export async function cpfLookupHmac(cpf: string, secret: string): Promise<string> {
+  return lookupHmac(normalizeCpf(cpf), secret);
+}
+
+export async function identityLookupHmac(documentType: string, documentNumber: string, secret: string): Promise<string> {
+  const type = documentType.trim().toUpperCase();
+  const number = normalizeIdentityDocument(documentNumber);
+  return lookupHmac(`${type}:${number}`, secret);
 }
 
 export async function encryptCpf(cpf: string, keyBase64: string): Promise<string> {
