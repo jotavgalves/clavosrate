@@ -12,6 +12,7 @@ import {
   adminOrganizations,
   adminUsers
 } from './handlers-admin';
+import { getAdminDocumentContent, reviewDocument, uploadDocument } from './handlers-documents';
 
 export interface Env {
   DB: D1Database;
@@ -24,6 +25,11 @@ export interface Env {
 
 function paymentRoute(pathname: string): string | null {
   const match = pathname.match(/^\/api\/v1\/loans\/([^/]+)\/payments$/);
+  return match?.[1] || null;
+}
+
+function adminDocumentRoute(pathname: string, suffix: 'content' | 'review'): string | null {
+  const match = pathname.match(new RegExp(`^/api/v1/admin/documents/([^/]+)/${suffix}$`));
   return match?.[1] || null;
 }
 
@@ -73,6 +79,8 @@ export default {
         response = await listLoans(request, env, id);
       } else if (request.method === 'POST' && url.pathname === '/api/v1/loans') {
         response = await createLoan(request, env, id);
+      } else if (request.method === 'POST' && url.pathname === '/api/v1/documents') {
+        response = await uploadDocument(request, env, id);
       } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/dashboard') {
         response = await adminDashboard(request, env, id);
       } else if (request.method === 'GET' && url.pathname === '/api/v1/admin/organizations') {
@@ -89,8 +97,15 @@ export default {
         response = await adminAudit(request, env, id);
       } else {
         const loanId = request.method === 'POST' ? paymentRoute(url.pathname) : null;
+        const documentContentId = request.method === 'GET' ? adminDocumentRoute(url.pathname, 'content') : null;
+        const documentReviewId = request.method === 'POST' ? adminDocumentRoute(url.pathname, 'review') : null;
+
         if (loanId) {
           response = await createPayment(request, env, id, loanId);
+        } else if (documentContentId) {
+          response = await getAdminDocumentContent(request, env, id, documentContentId);
+        } else if (documentReviewId) {
+          response = await reviewDocument(request, env, id, documentReviewId);
         } else {
           response = apiError(id, 404, 'NOT_FOUND', 'Ruta no encontrada');
         }
