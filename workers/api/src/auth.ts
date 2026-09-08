@@ -115,13 +115,15 @@ export async function createSession(
 }
 
 export function sessionCookie(token: string, production: boolean): string {
+  const sameSite = production ? 'None' : 'Lax';
   const secure = production ? '; Secure' : '';
-  return `clavos_session=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=43200${secure}`;
+  return `clavos_session=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=43200${secure}`;
 }
 
 export function clearSessionCookie(production: boolean): string {
+  const sameSite = production ? 'None' : 'Lax';
   const secure = production ? '; Secure' : '';
-  return `clavos_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
+  return `clavos_session=; Path=/; HttpOnly; SameSite=${sameSite}; Max-Age=0${secure}`;
 }
 
 export async function revokeCurrentSession(db: D1Database, request: Request): Promise<void> {
