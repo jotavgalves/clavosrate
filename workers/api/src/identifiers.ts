@@ -7,7 +7,9 @@ function b64url(bytes: Uint8Array): string {
 }
 
 function fromBase64(value: string): Uint8Array {
-  const binary = atob(value.replace(/-/g, '+').replace(/_/g, '/'));
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
+  const binary = atob(padded);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
   return bytes;
@@ -38,7 +40,7 @@ export async function cpfLookupHmac(cpf: string, secret: string): Promise<string
 export async function encryptCpf(cpf: string, keyBase64: string): Promise<string> {
   const keyBytes = fromBase64(keyBase64);
   if (keyBytes.length !== 32) throw new Error('CPF_ENCRYPTION_KEY_B64 must decode to 32 bytes');
-  const key = await crypto.subtle.importKey('raw', keyBytes, 'AES-GCM', false, ['encrypt']);
+  const key = await crypto.subtle.importKey('raw', keyBytes.buffer as ArrayBuffer, 'AES-GCM', false, ['encrypt']);
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoder.encode(normalizeCpf(cpf)));
   return `v1.${b64url(iv)}.${b64url(new Uint8Array(encrypted))}`;
