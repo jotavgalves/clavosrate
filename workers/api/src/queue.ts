@@ -1,3 +1,5 @@
+import { reconcileLoanVerificationFromDocument } from './loan-verification';
+
 interface QueueEnv {
   DB: D1Database;
 }
@@ -85,7 +87,7 @@ async function recalculateLoan(db: D1Database, loanId: string): Promise<string |
 
   const loanStatus = installments.length > 0 && paidCount === installments.length
     ? 'COMPLETED'
-    : (loan.verification_status === 'VERIFIED' ? 'ACTIVE' : 'PENDING_REVIEW');
+    : (loan.verification_status === 'VERIFIED' ? 'ACTIVE' : loan.verification_status === 'REJECTED' ? 'REJECTED' : 'PENDING_REVIEW');
 
   statements.push(db.prepare('UPDATE loans SET status = ?, updated_at = ? WHERE id = ?').bind(loanStatus, now, loanId));
   await db.batch(statements);
@@ -94,14 +96,13 @@ async function recalculateLoan(db: D1Database, loanId: string): Promise<string |
 
 async function recalculateScore(db: D1Database, personId: string): Promise<void> {
   const stats = await db.prepare(
-    `SELECT
-       COUNT(*) AS total,
-       SUM(CASE WHEN i.status = 'PAID_ON_TIME' THEN 1 ELSE 0 END) AS on_time,
-       SUM(CASE WHEN i.status = 'PAID_LATE' THEN 1 ELSE 0 END) AS late,
-       SUM(CASE WHEN i.status IN ('OVERDUE','PARTIAL_OVERDUE') THEN 1 ELSE 0 END) AS overdue
-     FROM installments i
-     JOIN loans l ON l.id = i.loan_id
-     WHERE l.person_id = ? AND l.verification_status = 'VERIFIED'`
+    `SELECT COUNT(*) AS total,
+            SUM(CASE WHEN i.status = 'PAID_ON_TIME' THEN 1 ELSE 0 END) AS on_time,
+            SUM(CASE WHEN i.status = 'PAID_LATE' THEN 1 ELSE 0 END) AS late,
+            SUM(CASE WHEN i.status IN ('OVERDUE','PARTIAL_OVERDUE') THEN 1 ELSE 0 END) AS overdue
+       FROM installments i
+       JOIN loans l ON l.id = i.loan_id
+      WHERE l.person_id = ? AND l.verification_status = 'VERIFIED'`
   ).bind(personId).first<{ total: number; on_time: number; late: number; overdue: number }>();
 
   const completed = await db.prepare(
@@ -121,9 +122,7 @@ async function recalculateScore(db: D1Database, personId: string): Promise<void>
 
   const settled = onTime + late;
   const punctuality = settled > 0 ? onTime / settled : 0;
-  let score = 500;
-  score += Math.round(punctuality * 300);
-  score += Math.min(finishedLoans * 25, 100);
+  let score = 500 + Math.round(punctuality * 300) + Math.min(finishedLoans * 25, 100);
   score -= Math.min(late * 8, 120);
   score -= Math.min(overdue * 55, 330);
   score = Math.max(0, Math.min(1000, score));
@@ -131,14 +130,7 @@ async function recalculateScore(db: D1Database, personId: string): Promise<void>
   const rating = score >= 700 ? 'LIMPIO' : score >= 500 ? 'ATENCION' : 'CLAVO';
   const confidence = total >= 30 ? 'HIGH' : total >= 10 ? 'MEDIUM' : 'LOW';
   const now = new Date().toISOString();
-  const factors = {
-    total_installments: total,
-    paid_on_time: onTime,
-    paid_late: late,
-    overdue,
-    completed_loans: finishedLoans,
-    punctuality
-  };
+  const factors = { total_installments: total, paid_on_time: onTime, paid_late: late, overdue, completed_loans: finishedLoans, punctuality };
 
   await db.batch([
     db.prepare(
@@ -161,8 +153,7 @@ async function detectDuplicateDocument(db: D1Database, documentId: string): Prom
   if (!doc?.sha256) return;
 
   const duplicate = await db.prepare(
-    `SELECT COUNT(DISTINCT person_id) AS people, COUNT(*) AS documents
-       FROM person_documents WHERE sha256 = ?`
+    `SELECT COUNT(DISTINCT person_id) AS people, COUNT(*) AS documents FROM person_documents WHERE sha256 = ?`
   ).bind(doc.sha256).first<{ people: number; documents: number }>();
   if (Number(duplicate?.people || 0) < 2) return;
 
@@ -177,15 +168,10 @@ async function detectDuplicateDocument(db: D1Database, documentId: string): Prom
       (id, case_type, severity, status, organization_id, person_id, loan_id, document_id, title, details_json, created_at, updated_at)
      VALUES (?, 'DUPLICATE_DOCUMENT', 'HIGH', 'OPEN', ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
-    crypto.randomUUID(),
-    doc.organization_id,
-    doc.person_id,
-    doc.loan_id,
-    doc.id,
+    crypto.randomUUID(), doc.organization_id, doc.person_id, doc.loan_id, doc.id,
     'Documento reutilizado en perfiles diferentes',
     JSON.stringify({ sha256: doc.sha256, distinct_people: duplicate?.people || 0, documents: duplicate?.documents || 0 }),
-    now,
-    now
+    now, now
   ).run();
 }
 
@@ -195,11 +181,22 @@ async function processEvent(db: D1Database, event: QueueEvent): Promise<void> {
   if (processed) return;
 
   let personId = event.person_id || null;
-  if (event.type === 'PAYMENT_RECORDED' && event.loan_id) personId = await recalculateLoan(db, event.loan_id);
-  if (event.type === 'LOAN_CREATED' && event.loan_id) personId = await recalculateLoan(db, event.loan_id);
+  let loanId = event.loan_id || null;
+
+  if (event.type === 'PAYMENT_RECORDED' && loanId) personId = await recalculateLoan(db, loanId);
+  if (event.type === 'LOAN_CREATED' && loanId) personId = await recalculateLoan(db, loanId);
   if (event.type === 'DOCUMENT_REVIEW_REQUESTED' && event.document_id) await detectDuplicateDocument(db, event.document_id);
-  if (event.type === 'DOCUMENT_REVIEW_COMPLETED' && personId) await recalculateScore(db, personId);
-  if ((event.type === 'PAYMENT_RECORDED' || event.type === 'LOAN_CREATED') && personId) await recalculateScore(db, personId);
+
+  if (event.type === 'DOCUMENT_REVIEW_COMPLETED' && event.document_id) {
+    const verification = await reconcileLoanVerificationFromDocument(db, event.document_id);
+    personId = verification.personId || personId;
+    loanId = verification.loanId;
+    if (loanId) personId = await recalculateLoan(db, loanId);
+  }
+
+  if (personId && ['PAYMENT_RECORDED', 'LOAN_CREATED', 'DOCUMENT_REVIEW_COMPLETED'].includes(event.type)) {
+    await recalculateScore(db, personId);
+  }
 
   await db.prepare(
     'INSERT OR IGNORE INTO processed_queue_events (event_id, event_type, processed_at) VALUES (?, ?, ?)'
