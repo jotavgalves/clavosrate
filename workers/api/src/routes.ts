@@ -29,19 +29,18 @@ export const ROUTES = {
     'GET /api/v1/admin/documents/:id/content',
     'POST /api/v1/admin/documents/:id/review',
     'GET /api/v1/admin/disputes',
+    'GET /api/v1/admin/risk-cases',
     'GET /api/v1/admin/audit'
   ],
-  pending: [
-    'GET /api/v1/admin/risk-cases'
-  ]
+  pending: []
 } as const;
 
 export function routeCatalog(requestId: string): Response {
   return json({
     name: 'Clavos Brasil API',
     version: 'v1',
-    status: 'authenticated-domain-and-document-foundation',
+    status: 'authenticated-domain-document-and-risk-foundation',
     routes: ROUTES,
-    note: 'Las rutas activas exigen sesión y RBAC. Los documentos se almacenan en R2 privado y toda visualización o revisión administrativa queda auditada.'
+    note: 'Las rutas activas exigen sesión y RBAC. Los documentos permanecen privados; pagos, score y señales de riesgo se procesan de forma auditable.'
   }, requestId);
 }
