@@ -1,4 +1,5 @@
 import './styles.css';
+import './desktop.css';
 import { adminApi, ApiError } from './api';
 
 type View='dashboard'|'organizations'|'users'|'loans'|'documents'|'risk'|'disputes'|'audit';
@@ -7,7 +8,7 @@ let session:any=null;
 let state:any={dashboard:null,organizations:[],users:[],loans:[],documents:[],risk:[],disputes:[],audit:[]};
 const nav:Array<[View,string,string]>=[['dashboard','Visión general','⌂'],['organizations','Organizaciones','O'],['users','Usuarios','U'],['loans','Créditos','C'],['documents','Documentos','D'],['risk','Riesgo','!'],['disputes','Disputas','∆'],['audit','Auditoría','A']];
 const brl=(minor:number=0)=>(minor/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const esc=(v:unknown)=>String(v??'').replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;' }[c]!));
+const esc=(v:unknown)=>String(v??'').replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]!));
 const err=(e:unknown)=>e instanceof ApiError?`${e.message}${e.requestId?` · ${e.requestId}`:''}`:'No fue posible completar la operación.';
 const badge=(text:string)=>`<span class="badge ${['ACTIVE','ACTIVA','APPROVED','VERIFIED','RESOLVED'].includes(text)?'ok':['PENDING','PENDING_REVIEW','NEEDS_CORRECTION','OPEN','INVESTIGATING'].includes(text)?'warn':''}">${esc(text)}</span>`;
 
