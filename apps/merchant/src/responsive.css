@@ -1,0 +1,92 @@
+/* Responsive system for Clavos Merchant */
+
+html,body,#app{min-height:100%;}
+body{overflow-x:hidden;}
+
+@media (max-width: 1100px){
+  .auth-page{grid-template-columns:1fr;min-height:100svh;}
+  .auth-brand{display:none;}
+  .auth-main{min-height:100svh;padding:40px 24px;align-items:center;}
+  .auth-card{width:min(100%,560px);margin:auto;}
+}
+
+@media (max-width: 760px){
+  body{padding:0!important;}
+  .phone{width:100%;max-width:none;min-height:100svh;padding:0 18px calc(96px + env(safe-area-inset-bottom));border:0!important;}
+  header{height:68px;padding-top:env(safe-area-inset-top);}
+  .brand b{font-size:15px;}
+  .brand small{font-size:11px;}
+  .logo{width:40px;height:40px;border-radius:13px;}
+  .avatar{width:40px;height:40px;}
+
+  .hero{padding:20px 0 18px;}
+  .hero h1{font-size:30px;line-height:1.08;}
+  .hero p{font-size:13px;line-height:1.55;}
+  .eyebrow{font-size:10px!important;}
+
+  .balance{padding:20px;border-radius:20px;margin-bottom:16px;}
+  .balance h2{font-size:32px;margin:10px 0 20px;}
+  .balance>div{gap:10px;}
+  .balance span{font-size:10px;padding:12px;}
+  .balance span b{font-size:13px;}
+
+  .stats{gap:12px;margin-bottom:24px;}
+  .stats article{padding:16px;min-height:108px;border-radius:18px;}
+  .stats article small{font-size:10px;}
+  .stats article strong{font-size:20px;margin:10px 0 4px;}
+  .stats article span{font-size:9px;}
+
+  .section-head{margin:24px 2px 12px;}
+  .section-head h3{font-size:16px;}
+  .actions{gap:12px;}
+  .actions button{padding:16px;min-height:132px;border-radius:18px;}
+  .actions b{font-size:12px;}
+  .actions span{font-size:10px;}
+
+  .list,.progress-card,.search-card,.form-card,.profile,.account-card{border-radius:18px;}
+  .search-card,.form-card,.profile,.account-card,.progress-card{padding:18px;margin-bottom:16px;}
+  .search-card label,.form-card label{font-size:11px;margin-bottom:16px;}
+  .search-card input,.form-card input,.form-card select{min-height:48px;padding:13px 14px;font-size:16px;border-radius:12px;}
+  .primary,.secondary,.paybtn{min-height:48px;font-size:12px;border-radius:12px;}
+  .secondary{text-align:center;margin-bottom:10px;}
+  .twocol{grid-template-columns:1fr;gap:0;}
+  .summary{margin:18px 0;padding:6px 14px;}
+  .summary div{font-size:11px;padding:11px 0;}
+  .notice{font-size:10px;padding:12px;line-height:1.55;}
+  .person,.loan{padding:15px 0;gap:12px;}
+  .person-info b,.loan b,.right>b{font-size:11px;}
+  .person-info span,.loan span{font-size:9px;}
+
+  nav{left:0;right:0;transform:none;width:100%;bottom:0;border-radius:0!important;border-left:0!important;border-right:0!important;border-bottom:0!important;padding:8px 8px calc(8px + env(safe-area-inset-bottom));grid-template-columns:repeat(5,1fr);}
+  nav button{font-size:9px;min-height:52px;}
+  nav i{width:30px;height:30px;font-size:12px;margin-bottom:4px;}
+
+  .auth-main{padding:calc(24px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));align-items:flex-start;}
+  .auth-card{width:100%;max-width:520px;padding:22px;border-radius:22px;margin:20px auto 0;}
+  .auth-card-head h2{font-size:28px;}
+  .auth-card-head p{font-size:13px;}
+  .auth-card form{display:grid;gap:14px;}
+  .auth-card label{font-size:11px;}
+  .auth-card input,.auth-card select{min-height:50px;font-size:16px;padding:13px 14px;}
+  .auth-card .primary,.auth-card .secondary{min-height:50px;font-size:13px;}
+  .register-card .twocol{grid-template-columns:1fr;gap:0;}
+  .access-code{font-size:22px;word-break:break-all;padding:16px;}
+}
+
+@media (max-width: 420px){
+  .phone{padding-left:14px;padding-right:14px;}
+  .stats{grid-template-columns:1fr;}
+  .actions{grid-template-columns:1fr;}
+  .actions button{min-height:auto;}
+  .balance>div{grid-template-columns:1fr;}
+  .hero h1{font-size:27px;}
+  .auth-card{padding:18px;}
+  .auth-card-head h2{font-size:25px;}
+}
+
+@media (min-width: 761px) and (max-width: 1180px){
+  .phone{width:min(100%,760px);padding-left:28px;padding-right:28px;}
+  nav{width:min(100%,720px);}
+  .stats{grid-template-columns:repeat(4,1fr);}
+  .actions{grid-template-columns:repeat(2,1fr);}
+}
