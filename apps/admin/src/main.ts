@@ -1,5 +1,6 @@
 import './styles.css';
 import './desktop.css';
+import './responsive.css';
 import { adminApi, ApiError } from './api';
 
 type View='dashboard'|'organizations'|'users'|'loans'|'documents'|'risk'|'disputes'|'audit';
