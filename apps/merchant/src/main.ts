@@ -1,5 +1,6 @@
 import './styles.css';
 import './ui.css';
+import './responsive.css';
 import { api, ApiError } from './api';
 
 type View='home'|'today'|'clients'|'new-loan'|'portfolio'|'account';
