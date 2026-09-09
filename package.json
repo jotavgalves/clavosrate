@@ -13,6 +13,7 @@
     "dev:admin": "npm --workspace @clavos/admin run dev",
     "dev:merchant": "npm --workspace @clavos/merchant run dev",
     "deploy:api": "npx wrangler deploy --config workers/api/wrangler.toml",
+    "build": "npm run build:merchant && node scripts/sync-pages-dist.mjs",
     "build:admin": "npm --workspace @clavos/admin run build",
     "build:merchant": "npm --workspace @clavos/merchant run build",
     "typecheck": "npm run typecheck --workspaces --if-present"
